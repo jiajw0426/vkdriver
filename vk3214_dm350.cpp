@@ -36,16 +36,16 @@ void InitPortPinMux()
 	SysDm350_SetPinMuxBit(SYSCTRL_PINMUX3,PINMUX3_GIO20_SD1DATA1_UART2RXD_TWOBIT,2, TRUE);	
 	CLKC_Release();
 	GIO_Grab();
-      GIO_SetDirection(GIO_PORT_1, GIO_INPUT, FALSE);
-      GIO_SetIRQPort(GIO_PORT_1,GIO_IRQ_FALLING_EDGE);
-      GIO_SetBankInt(GPIO_BANK0);
-      GIO_Release();
+    GIO_SetDirection(GIO_PORT_1, GIO_INPUT, FALSE);
+    GIO_SetIRQPort(GIO_PORT_1,GIO_IRQ_FALLING_EDGE);
+    GIO_SetBankInt(GPIO_BANK0);
+    GIO_Release();
 
 
 
 
 	
-      RETAILMSG(ZONE_UART,(L"--InitPortPinMux %x\r\n"));
+    RETAILMSG(ZONE_UART,(L"--InitPortPinMux %x\r\n"));
 }
 
 class CPddVK3214Serial : public CPdd350Uart {

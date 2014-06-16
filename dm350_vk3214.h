@@ -26,7 +26,7 @@ Notes:
 #ifndef __DM350_VK3214_H_
 #define __DM350_VK3214_H_
 
-
+#include <s3c2440a_base_regs.h>
 
 
 /******************************3214**************************************/
@@ -73,7 +73,7 @@ typedef struct _COM_DEVICE_
     volatile P_DM350_UART_REG	v_pVKComReg;               //uart2
  } COM_DEVICE, *PCOM_DEVICE;
 
-#define UART2_PA_BASE_ADDRESS      0x1E06000
+#define UART2_PA_BASE_ADDRESS       S3C2440A_BASE_REG_PA_UART2 //(0x50008000) 
 #define UART2_INPUT_CLOCK              162000000ul
 #define VK3214_DEFAULT_BAUD          19200   //9600
 #define UART_TRANS_DATA                  (0x1<<5)  // enable ERR interrupt

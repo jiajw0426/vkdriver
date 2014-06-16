@@ -32,7 +32,7 @@ static void delaytime(int time);
 
 static HANDLE g_hMutexUARTC  = NULL;
 DWORD dwUseCountUARTC = 0;
-static volatile  S3C2440A_UART_REG	       v_pUart2Reg	= NULL;	
+static volatile  PS3C2440A_UART_REG	       v_pUart2Reg	= NULL;	
 //-0ld static volatile P_DM350_UART_REG	       v_pUart2Reg	= NULL;
 
 static volatile S3C2440A_INTR_REG		*g_pINTCReg = NULL;
@@ -107,7 +107,7 @@ void VK3214_ClearReg(void)
 	
 }
 /**************************************************/
- void Uart2BaudRateSet(int const baudrate,/* old P_DM350_UART_REG*/S3C2440A_UART_REG v_pUart2base)
+ void Uart2BaudRateSet(int const baudrate,/* old P_DM350_UART_REG*/PS3C2440A_UART_REG v_pUart2base)
  {
 	iMainBaud = baudrate;
 	//old  v_pUart2base->DLL =  0xff& (UART2_INPUT_CLOCK/16/baudrate) + 1;
@@ -120,7 +120,7 @@ void VK3214_ClearReg(void)
 //功能: 修改 vk3214 主串口波特率
 //输入: 波特率写入全局主串口控制寄存器(GMUCR[7:4])
 //**************************************************
-BOOL ChangeMainBaud(int const baudrate,/* old P_DM350_UART_REG*/ S3C2440A_UART_REG v_pUart2base)
+BOOL ChangeMainBaud(int const baudrate,/* old P_DM350_UART_REG*/ PS3C2440A_UART_REG v_pUart2base)
 {	 
 	 int i;
 	 BYTE baudset;
@@ -155,7 +155,7 @@ BOOL ChangeMainBaud(int const baudrate,/* old P_DM350_UART_REG*/ S3C2440A_UART_R
 /************************************************************************/
 /*功能：唤醒vk32
 /************************************************************************/
-BOOL Wakeup_VK3214(/* old P_DM350_UART_REG*/ S3C2440A_UART_REG v_UartBase)
+BOOL Wakeup_VK3214(/* old P_DM350_UART_REG*/ PS3C2440A_UART_REG v_UartBase)
 {
 	BYTE   gmucr = GMUCR;
 	volatile int iCount = 0;
@@ -177,12 +177,12 @@ BOOL Wakeup_VK3214(/* old P_DM350_UART_REG*/ S3C2440A_UART_REG v_UartBase)
 	for(i=0;i <40; i++)
 	{
 		 Sleep(5);
-		while(!(v_UartBase->LSR&(1<<5)));//send ready
-       	v_UartBase->THR = gmucr;	    
-		while(!(v_UartBase->LSR & 1)&& iCount++ < 200000);	
+		while(!(v_UartBase->UTRSTAT&(1<<2)));//检查接收发送状态寄存器，UTRSTAT[2]为1说明发送缓冲寄存器为空
+       	v_UartBase->UTXH = gmucr;	 //将gmucr 写入发送寄存器，读取全局主串口控制寄存器  
+		while(!(v_UartBase->UTRSTAT & 1)&& iCount++ < 200000);//UTRSTAT[0]为1说明接收到数据
 		if(iCount<200000)
 		{
-			gmucr = v_UartBase->RBR >>4 ;
+			gmucr = v_UartBase->URXH >>4 ;//从rx寄存器中读取gmucr的内容，高四位为波特率设置
 			if (iMainBaud  == VKbauddata[gmucr].baudrate )
 			{
                    		 RETAILMSG(1, (L"Wakeup_VK3214 ok iMainBaud = %d\r\n", iMainBaud));
@@ -191,13 +191,9 @@ BOOL Wakeup_VK3214(/* old P_DM350_UART_REG*/ S3C2440A_UART_REG v_UartBase)
 		    	
 		}
 	}
-	//if vk3214 wake fail change to another baudrate 
+	//如果波特率设置尝试设置其他波特率
 	RETAILMSG(1, (L"Wakeup_VK3214 time out fail iMainBaud = %d \r\n",iMainBaud));
-	//while(!(v_UartBase->LSR&(1<<5)));
-      // v_UartBase->THR = send;	
-      // while(!(v_UartBase->LSR&(1<<5)));
-      // v_UartBase->THR = 0;	
-
+	
        
 	if (iMainBaud  == VK3214_DEFAULT_BAUD)
 	{
@@ -212,19 +208,19 @@ BOOL Wakeup_VK3214(/* old P_DM350_UART_REG*/ S3C2440A_UART_REG v_UartBase)
 	for(i=0;i <40; i++)
 	{
 		 Sleep(5);
-		while(!(v_UartBase->LSR&(1<<5)));//send ready
-       	v_UartBase->THR = gmucr;	    
-		while(!(v_UartBase->LSR & 1)&& iCount++ < 200000);	
-		if(iCount<200000)
-		{
-			gmucr = v_UartBase->RBR >>4 ;
-			if (iMainBaud  == VKbauddata[gmucr].baudrate )
-			{
-                   		RETAILMSG(1, (L"Wakeup_VK3214 ok iMainBaud = %d\r\n", iMainBaud));
-                    	return(TRUE);
-             	}
-		    	
-		}
+		 while(!(v_UartBase->UTRSTAT&(1<<2)));//检查接收发送状态寄存器，UTRSTAT[2]为1说明发送缓冲寄存器为空
+		 v_UartBase->UTXH = gmucr;	 //将gmucr 写入发送寄存器，读取全局主串口控制寄存器  
+		 while(!(v_UartBase->UTRSTAT & 1)&& iCount++ < 200000);//UTRSTAT[0]为1说明接收到数据
+		 if(iCount<200000)
+		 {
+			 gmucr = v_UartBase->URXH >>4 ;//从rx寄存器中读取gmucr的内容，高四位为波特率设置
+			 if (iMainBaud  == VKbauddata[gmucr].baudrate )
+			 {
+				 RETAILMSG(1, (L"Wakeup_VK3214 ok iMainBaud = %d\r\n", iMainBaud));
+				 return(TRUE);
+			 }
+
+		 }
 	}
 	
 	 RETAILMSG(1, (L"Wakeup_VK3214  fail, Please check vk3214 !!!  iMainBaud = %d \r\n",iMainBaud));	
@@ -240,22 +236,23 @@ BOOL ForemostInitUart(void)
 	irq =0x2D;
 	if (dwUseCountUARTC == 0) // Not yet initted
       {
-		g_hMutexUARTC = CreateMutex(NULL,FALSE,UARTC_MUTEX_NAME);
+		g_hMutexUARTC = CreateMutex(NULL,FALSE,"UARTC_MUTEX_NAME");
 
 		RETAILMSG(1, (L"ForemostInitUart called, Mutex = [0x%X]\r\n",g_hMutexUARTC));
 
 		if (g_hMutexUARTC) // CreateMutex succeeded
-            {
-                    v_pUart2Reg =  (P_DM350_UART_REG)MmMapIoSpace(regBase, sizeof(DM350_UART_REG),FALSE);
-			 g_pINTCReg = (DM350_INTC_REG *)MmMapIoSpace(regBase, sizeof(DM350_INTC_REG),FALSE);
+            {		
+					//映射物理地址
+                    v_pUart2Reg =  (PS3C2440A_UART_REG)MmMapIoSpace(regBase, sizeof(S3C2440A_UART_REG),FALSE);
+					g_pINTCReg = (S3C2440A_INTR_REG *)MmMapIoSpace(regBase, sizeof(S3C2440A_INTR_REG),FALSE);
 			                  
-			if (v_pUart2Reg == NULL)
-                   {
+					if (v_pUart2Reg == NULL)
+						{
                            ERRORMSG(VK3214_DEBUG, (L"ForemostInitUart : regBase MmMapIoSpace failed!\r\n"));
                            CloseHandle(g_hMutexUARTC);
                            g_hMutexUARTC = NULL;			
                            return(FALSE);
-			}
+						}
 		
 			dwUseCountUARTC++;
 			InitPortPinMux();	
