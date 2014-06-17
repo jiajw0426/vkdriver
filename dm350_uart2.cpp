@@ -55,13 +55,17 @@ DWORD     g_sysIntr =SYSINTR_NOP;
 
 void Dump_u2Reg(void)
 {
-      RETAILMSG(1, (L"v_pUart2Reg->PWREMU_MGMT = %x \r\n",v_pUart2Reg->PWREMU_MGMT));
-	  RETAILMSG(1, (L"v_pUart2Reg->DLL = %x \r\n",v_pUart2Reg->DLL));  
-      RETAILMSG(1, (L"v_pUart2Reg->DLH = %x \r\n",v_pUart2Reg->DLH));
-	  RETAILMSG(1, (L"v_pUart2Reg->FCR = %x \r\n",v_pUart2Reg->FCR));
-	  RETAILMSG(1, (L"v_pUart2Reg->MCR = %x \r\n",v_pUart2Reg->MCR));
-	  RETAILMSG(1, (L"v_pUart2Reg->LCR = %x \r\n",v_pUart2Reg->LCR));
-	  RETAILMSG(1, (L"v_pUart2Reg->IER = %x \r\n",v_pUart2Reg->IER));
+	  RETAILMSG(1, (L"v_pUart2Reg->ULCON = %x \r\n",v_pUart2Reg->ULCON));
+      RETAILMSG(1, (L"v_pUart2Reg->UCON = %x \r\n",v_pUart2Reg->UCON));
+	  RETAILMSG(1, (L"v_pUart2Reg->UFCON = %x \r\n",v_pUart2Reg->UFCON));  
+      RETAILMSG(1, (L"v_pUart2Reg->UMCON = %x \r\n",v_pUart2Reg->UMCON));
+	  RETAILMSG(1, (L"v_pUart2Reg->UTRSTAT = %x \r\n",v_pUart2Reg->UTRSTAT));
+	  RETAILMSG(1, (L"v_pUart2Reg->UERSTAT = %x \r\n",v_pUart2Reg->UERSTAT));
+	  RETAILMSG(1, (L"v_pUart2Reg->UFSTAT = %x \r\n",v_pUart2Reg->UFSTAT));
+	  RETAILMSG(1, (L"v_pUart2Reg->UMSTAT = %x \r\n",v_pUart2Reg->UMSTAT));
+	  RETAILMSG(1, (L"v_pUart2Reg->UTXH = %x \r\n",v_pUart2Reg->UTXH));
+	  RETAILMSG(1, (L"v_pUart2Reg->URXH = %x \r\n",v_pUart2Reg->URXH));
+	  RETAILMSG(1, (L"v_pUart2Reg->UBRDIV = %x \r\n",v_pUart2Reg->UBRDIV));
 
 }
 void delay(int time)
@@ -236,7 +240,7 @@ BOOL ForemostInitUart(void)
 	irq =0x2D;
 	if (dwUseCountUARTC == 0) // Not yet initted
       {
-		g_hMutexUARTC = CreateMutex(NULL,FALSE,"UARTC_MUTEX_NAME");
+		g_hMutexUARTC = CreateMutex(NULL,FALSE,L"UARTC_MUTEX_NAME");
 
 		RETAILMSG(1, (L"ForemostInitUart called, Mutex = [0x%X]\r\n",g_hMutexUARTC));
 
@@ -255,7 +259,7 @@ BOOL ForemostInitUart(void)
 						}
 		
 			dwUseCountUARTC++;
-			InitPortPinMux();	
+			// 忽略 不知道什么作用  InitPortPinMux();	
 			Sleep(100);	
 			TestVK3214();
 			//goto  ret; 			
@@ -400,31 +404,37 @@ BOOL  VK3214ComInit(BYTE dwChildPort ,PCOM_DEVICE pDevice)
        VK3214_Grab();
 	  dwChildPort--; 
 
+	//读取子串口的中断使能寄存器
 	sier =  ReadReg(dwChildPort,SIER);
-	
-	sier = SIER_RFIEN ;   //| SIER_TRIEN
-		
-      WriteReg(dwChildPort,SIER,sier);
-	  
-      sctlr = ReadReg(dwChildPort,SCTLR);
-	
+	////使能接收FIFO 触点中断 
+	sier= SIER_RFIEN ;   //因为复位值为0，所以没用用运算符|
+	//写回中断使能寄存器	
+    WriteReg(dwChildPort,SIER,sier);
+
+
+	//读取子串口控制寄存器  
+    sctlr = ReadReg(dwChildPort,SCTLR);
+	//使能子串口并，设置默认波特率
 	sctlr = SCTLR_UTEN |(0x3<<4 );    //WUS 0309         
-	
-       WriteReg(dwChildPort,SCTLR,sctlr);
+	//写回子串口控制寄存器
+    WriteReg(dwChildPort,SCTLR,sctlr);
 
-        WriteReg(dwChildPort,SCONR,0);
+	//复位子串口配置寄存器
+    WriteReg(dwChildPort,SCONR,0);
 
+	//初始化子串口fifo控制寄存器
 	WriteReg(dwChildPort,SFOCR,0xff);
-	
+	//为什么写了两次？
 	WriteReg(dwChildPort,SFOCR,SFOCR_RFTL_2 | SFOCR_TFTL_2 | SFOCR_RFEN | SFOCR_TFEN);      //triger point     14BYTES
 	
+	//读取全局中断寄存器
 	gir=ReadReg(0,GIR);
-	
+	//使能第dwChildPort串口中断
 	gir|= (0x10<<dwChildPort);
-
+    //写全局中断寄存器
 	WriteReg(0,GIR,gir);
 
-      VK3214_Release();
+    VK3214_Release();
 	RETAILMSG(1, (L"VK3214ComInit Dump_VKReg()  \r\n"));	
 	Dump_VKReg();	  
 	RETAILMSG(1, (L"--VK3214ComInit   \r\n"));	
@@ -433,14 +443,12 @@ BOOL  VK3214ComInit(BYTE dwChildPort ,PCOM_DEVICE pDevice)
 
 
 
-
-
-
-
-
-
-
 //*****************************************************************************
+
+
+/************************************************************************/
+/* 功能：初始化UART串口						 
+/***********************************************************************/
 BOOL InitializeUart2port(void)
 {
      //int *pMainBaud = &iMainBaud;
@@ -449,17 +457,17 @@ BOOL InitializeUart2port(void)
       //InitBuf(&rxbuf);
       if(v_pUart2Reg)
      {
-          v_pUart2Reg->PWREMU_MGMT = 0x8001;
-          v_pUart2Reg->PWREMU_MGMT = 0xe001;
+       // v_pUart2Reg->PWREMU_MGMT = 0x8001;
+        //v_pUart2Reg->PWREMU_MGMT = 0xe001;
 	    //v_pUart2Reg->LCR |= 0x80;     //Bit 7 has to be 1 for setting DLL and DLH
-	    v_pUart2Reg->DLL =  0xff& (UART2_INPUT_CLOCK/16/VK3214_DEFAULT_BAUD);       //divider = 162000000/(16*VK3214_DEFAULT_BAUD)-VK3214_DEFAULT_BAUD bps
-	    v_pUart2Reg->DLH =  0xff&((UART2_INPUT_CLOCK/16/VK3214_DEFAULT_BAUD)>>8);
-
-          v_pUart2Reg->FCR =   FCR_FIFO_EN ;     
-	    v_pUart2Reg->FCR =  (FCR_FIXFTL_2 <<6) | (FCR_RX_EN<<1) | (FCR_TX_EN<<2) | FCR_FIFO_EN;                                                                   /* Enable FIFO,  set trigger level as 14 */
-	    v_pUart2Reg->MCR = 0x21;
-	    v_pUart2Reg->LCR = LCR_WLS_2;             //set 8bits length
-	    v_pUart2Reg->IER = 0x0;                        //disable int
+	 //设置比特率，暂且设置为下面的值
+	    v_pUart2Reg->UBRDIV =  0xff& (UART2_INPUT_CLOCK/16/VK3214_DEFAULT_BAUD);       //divider = 162000000/(16*VK3214_DEFAULT_BAUD)-VK3214_DEFAULT_BAUD bps
+	  //  v_pUart2Reg->DLH =  0xff&((UART2_INPUT_CLOCK/16/VK3214_DEFAULT_BAUD)>>8);
+    
+	    v_pUart2Reg->UFCON =  (UFCON_FIXFTL_1 <<4) | (UFCON_RX_EN<<1) | (UFCON_TX_EN<<2) | UFCON_FIFO_EN;                                                                   /* Enable FIFO,  set trigger level as 14 */
+	    v_pUart2Reg->UMCON = 0x10;//自动流量控制
+	    v_pUart2Reg->ULCON = 0x3; //不采用红外线传输模式，无奇偶校验位，1个停止位，8个数据
+	   // v_pUart2Reg->IER = 0x0;                        //disable int
 	    //v_pUart2Reg->FCR =   0 ;    
 	    //v_pUart2Reg->IER = 0x5;
 	    iMainBaud = VK3214_DEFAULT_BAUD;
@@ -474,63 +482,98 @@ BOOL InitializeUart2port(void)
 
 }
 
-
+/************************************************************************/
+/* 功能：通过uart写数据,接受发送状态寄存器UTRSTAT[2]为1表示发送缓冲寄存器
+	为空，把数据写入发送缓冲状态寄存器UTXH用于写数据						 
+/************************************************************************/
 inline void   Uart2Write(int data)    
 {
-	while(!(v_pUart2Reg->LSR&(1<<5)));//send ready
-       v_pUart2Reg->THR = data;
+	while(!(v_pUart2Reg->UTRSTAT&(1<<2)));
+	v_pUart2Reg->UTXH =data;
+ 
 }
 
-
+/************************************************************************/
+/* 功能：通过uart读数据,接受发送状态寄存器UTRSTAT为1说明已经接受到数据			
+		 然后从接收缓冲寄存器读数据URXH
+/************************************************************************/
 inline int   Uart2Read(void)    
 {
 	volatile int iCount = 0;
-	while(!(v_pUart2Reg->LSR & 1)&& iCount++ < 250000);
+	while(!(v_pUart2Reg->UTRSTAT & 1)&& iCount++ < 250000);
 	if(iCount>250000)
 	{
 	      RETAILMSG(1, (L"Uart2Read time out fail\r\n"));
 		return 0xff;
 	}
-	return (v_pUart2Reg->RBR);
+	return (v_pUart2Reg->URXH);
 }
 
 
+/************************************************************************/
+/* 功能：写子串口寄存器，写寄存器命令是先在tx上写命令命令格式为
+		[1:0:c1:c0:a3:a2:a1:a0],c1c0为子串口通道从00到11，a3a2a1a0,为寄存器地址
+		然后再tx上写数据[d7:d6:d5:d4:d3:d2:d1]
+*/
+/************************************************************************/
 void WriteReg(BYTE childSerial,BYTE regindex,BYTE value)
 {
 	//BYTE i;
-      BYTE send = 0x80;
+    BYTE send = 0x80;
+	//追加子串口通道，也就是c1,c0
 	send |= ((childSerial&0x3)<<4);
+	//追加寄存器地址
 	send |= (regindex&0xf);	
-      Uart2Write(send);
+	//写命令
+    Uart2Write(send);
+	// 写数据
 	Uart2Write(value);
 }
 
-
+/************************************************************************/
+/* 功能：读子串口寄存器，写寄存器命令是先在tx上写命令命令格式为
+		[0:0:c1:c0:a3:a2:a1:a0],c1c0为子串口通道从00到11，a3a2a1a0,为寄存器地址
+		然后再rx上读数据[d7:d6:d5:d4:d3:d2:d1]
+*/
+/************************************************************************/
 BYTE ReadReg(BYTE childSerial,BYTE regindex)
 {
 	//BYTE i;
-      BYTE send = 0x0;
+    BYTE send = 0x0;
+	//追加子串口通道，也就是c1,c0
 	send |= ((childSerial&0x3)<<4);
+	//追加寄存器地址
 	send |= (regindex&0xf);
-      Uart2Write(send);
+	//写命令
+    Uart2Write(send);
+	//读寄存器
 	send = (BYTE)Uart2Read();
     return  send;
 }
 
 
-
+/************************************************************************/
+/* 功能： 初始化所有的全局寄存器
+*/
+/************************************************************************/
 void VK3214GlobalInit(void)
 {
-	//setup serila baudrate 9600
-      WriteReg(0,GCR,0);
+	
+	//初始化全局控制寄存器
+    WriteReg(0,GCR,0);
+	//设置波特率为9600
 	WriteReg(0,GMUCR,VK_GLOABLE_BAUD<<4);                             //VK_GLOABLE_BAUD
-	//setup dm350 serila badurate accordingly
+	//使能所有子串口中断
 	WriteReg(0,GIR,0xF0); 
 	WriteReg(0,GXOFF,0); 
 	WriteReg(0,GXON,0); 
        
 }
 
+/************************************************************************/
+/* 功能： 初始化子串口
+*/
+/************************************************************************/
 void ChildSerial_Init(int childserial)
 {
        if(childserial>3)
@@ -538,12 +581,16 @@ void ChildSerial_Init(int childserial)
        	RETAILMSG(1, (L"ChildSerial_Init Fail childserial= %d \r\n",childserial));
 		return;
        }
-	   
+	  
+    //设置波特率为9600[0011]，并使能该子串口[1000]
 	  WriteReg(childserial,SCTLR,0x38);     //change baudrate at here
 	  WriteReg(childserial,SCONR,0x0);
 	  WriteReg(childserial,SFWCR,0x0);
+	  //使能发送和接收FIFO，并清除FIFO寄存器数据
 	  WriteReg(childserial,SFOCR,0xf);
+	  //使能发送和接收FIFO
 	  WriteReg(childserial,SFOCR,0xc);
+	  //使能接收FIFO触点中断
 	  WriteReg(childserial,SIER,0x1);  
 }
 
@@ -837,10 +884,11 @@ VOID ReadFIFO(PCOM_DEVICE pDevice, BYTE Length)
 	send |= (ChildPort<<4);
 	send |= ((Length-1)&0x0f);
       Uart2Write(send);
-	delaytime(30000);   //wus	
-      while(v_pUart2Reg->LSR&(1<<0))
+	delaytime(30000);   //wus
+	 //接收就绪
+      while(v_pUart2Reg->UTRSTAT&(1<<0))
       {	    
-          WriteByte(pDevice, v_pUart2Reg->RBR); 
+          WriteByte(pDevice, v_pUart2Reg->URXH); 
       }
      
 

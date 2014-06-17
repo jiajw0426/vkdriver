@@ -210,7 +210,7 @@ PVOID VK3214ComAttach(DWORD dwChildSerial ,PCOM_DEVICE pDevice,DWORD irq)
 		RETAILMSG( 1, (TEXT("something  fail  dwChildSerial = %x pDevice = %x \r\n"),dwChildSerial,pDevice));
 		return 0;
     	}
-       pDevice->v_pVKComReg = (P_DM350_UART_REG)MmMapIoSpace(ioPhysicalBase, sizeof(DM350_UART_REG),FALSE);	
+       pDevice->v_pVKComReg = (PS3C2440A_UART_REG)MmMapIoSpace(ioPhysicalBase, sizeof(S3C2440A_UART_REG),FALSE);	
 
 	 if(!pDevice->v_pVKComReg)
 	 {

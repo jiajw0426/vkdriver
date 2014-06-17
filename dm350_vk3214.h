@@ -27,7 +27,7 @@ Notes:
 #define __DM350_VK3214_H_
 
 #include <s3c2440a_base_regs.h>
-
+#include <s3c2440a_uart.h>
 
 /******************************3214**************************************/
 #define VK3214_DEBUG       1
@@ -70,7 +70,7 @@ typedef struct _COM_DEVICE_
     DWORD          m_serial_setup;
     DWORD          m_serial_flag;
     DWORD          m_childport;
-    volatile P_DM350_UART_REG	v_pVKComReg;               //uart2
+    volatile PS3C2440A_UART_REG	v_pVKComReg;               //uart2
  } COM_DEVICE, *PCOM_DEVICE;
 
 #define UART2_PA_BASE_ADDRESS       S3C2440A_BASE_REG_PA_UART2 //(0x50008000) 
@@ -138,10 +138,10 @@ VK3214_Baudset const VKbauddata[16] = { {307200, 0x00}, {153600, 0x01},{76800, 0
 #endif
 //*******************************************************************************************
 // uart2
-#define FCR_FIXFTL_2         3       //FIFO triger level     0: 1byte, 1: 4bytes, 2: 8bytes, 3: 14bytes
-#define FCR_FIFO_EN          1
-#define FCR_RX_EN             1
-#define FCR_TX_EN             1
+#define UFCON_FIXFTL_1         3       //FIFO triger level     0: 1byte, 1: 8bytes, 2: 16bytes, 3: 32bytes
+#define UFCON_FIFO_EN          1       //Ê¹ÄÜFIFO
+#define UFCON_RX_EN             1      //RX FIFO RESET
+#define UFCON_TX_EN             1      //TX FIFO RESET
  
 #define LCR_WLS_2             3     //word length   0: 5bits,  1:6 bits, 2: 7 bits, 3: 8 bits
 
@@ -296,7 +296,7 @@ extern void ChildSerial_Init(int childserial);
 extern BOOL ForemostInitUart(void);
 extern void WriteReg(BYTE childSerial,BYTE regindex,BYTE value);
 extern BYTE ReadReg(BYTE childSerial,BYTE regindex);
-extern BOOL ChangeMainBaud(int const baudrate,P_DM350_UART_REG v_pUart2base);
+extern BOOL ChangeMainBaud(int const baudrate,PS3C2440A_UART_REG v_pUart2base);
 
 extern BOOL VK3214_Grab(void);
 extern BOOL VK3214_Release(void);
@@ -321,7 +321,7 @@ extern void  vk3214_g_int_dis(void);
 extern void  vk3214_g_int_en(void);
 extern DWORD   ComUartIntThread(LPVOID Context);
 extern void ForemostDeInitUart(void);
-extern BOOL Wakeup_VK3214(P_DM350_UART_REG v_UartBase);
+extern BOOL Wakeup_VK3214(PS3C2440A_UART_REG v_UartBase);
 
 
 #endif

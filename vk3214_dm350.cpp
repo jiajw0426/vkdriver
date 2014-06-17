@@ -22,11 +22,13 @@ History		:	1. Create by xzh in 2008.3
 #include "pdd_dm350_vk.h"
 #include <BSP.h>
 
-#include <dm350_clkc_lib.h>
 
 //#include "dm350_vk3214.h"
 
 #define ZONE_UART 1
+
+/************************************************************************
+不知道这个函数做什么用暂且忽略                                                               
 
 void InitPortPinMux()
 {
@@ -47,6 +49,8 @@ void InitPortPinMux()
 	
     RETAILMSG(ZONE_UART,(L"--InitPortPinMux %x\r\n"));
 }
+
+************************************************************************/
 
 class CPddVK3214Serial : public CPdd350Uart {
 public:

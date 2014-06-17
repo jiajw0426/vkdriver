@@ -28,7 +28,6 @@ Notes:
 
 #include <cserpdd.h>
 #include <cmthread.h>
-#include <dm350_uart.h>
 #include "Dm350_vk3214.h"
 /**********************************************************/
 
@@ -108,7 +107,7 @@ public:
     virtual void    Restore();
     virtual void    DumpRegister();
 protected:
-    volatile      P_DM350_UART_REG const  m_pReg;
+    volatile      PS3C2440A_UART_REG const  m_pReg;
     BOOL    	m_fIsBackedUp;
 	
 private:
