@@ -1,0 +1,43 @@
+_ISVINCPATH=$(_WINCEROOT)\public\common\sdk\inc;
+_OEMINCPATH=$(_WINCEROOT)\public\common\oak\inc;$(_WINCEROOT)\public\common\sdk\inc;$(_WINCEROOT)\public\common\DDK\INC;$(_TARGETPLATROOT)\SRC\INC
+
+WINCEOEM=1
+RELEASETYPE=PLATFORM
+
+
+TARGETNAME=vk3214
+DEFFILE=vk3214.def
+FILE_VIEW_ROOT_FOLDER= \
+    ReadMe.txt \
+    prelink.bat \
+    postlink.bat \
+
+FILE_VIEW_RESOURCE_FOLDER= \
+
+FILE_VIEW_INCLUDES_FOLDER= \
+    dm350_vk3214.h \
+    pdd_dm350_vk.h \
+
+SOURCES= \
+    dm350_uart2.cpp \
+    pdd_dm350_vk3214.cpp \
+    vk3214_dm350.cpp \
+
+TARGETTYPE=DYNLINK
+TARGETLIBS=$(_COMMONSDKROOT)\lib\$(_CPUINDPATH)\coredll.lib \
+           $(_SYSGENOAKROOT)\lib\$(_CPUINDPATH)\ceddk.lib
+
+SOURCELIBS=$(_SYSGENOAKROOT)\lib\$(_CPUINDPATH)\serpddcm.lib \
+           $(_SYSGENOAKROOT)\lib\$(_CPUINDPATH)\com_mdd2.lib
+
+POSTLINK_PASS_CMD=postlink.bat
+PRELINK_PASS_CMD=prelink.bat
+FILE_VIEW_PARAMETER_FOLDER= \
+    vk3214.bib \
+    vk3214.reg \
+    vk3214.dat \
+    vk3214.db \
+    vk3214.def \
+    ProjSysgen.bat \
+
+

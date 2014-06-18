@@ -1,0 +1,40 @@
+;
+; Copyright (c) Microsoft Corporation.  All rights reserved.
+;
+;
+; Use of this source code is subject to the terms of the Microsoft end-user
+; license agreement (EULA) under which you licensed this SOFTWARE PRODUCT.
+; If you did not accept the terms of the EULA, you are not authorized to use
+; this source code. For a copy of the EULA, please see the LICENSE.RTF on your
+; install media.
+;
+
+; This file is to be included in platform.reg if required.
+;
+; $(PCI_BUS_ROOT) is a variable that needs to be set in the including 
+; platform.reg. It's value will be something like 
+; HKEY_LOCAL_MACHINE\Drivers\BuiltIn
+
+;=============== UART2 (physical COM1 connector P1) (Serial) ===============
+[HKEY_LOCAL_MACHINE\Drivers\BuiltIn\Serial1]
+   "DeviceArrayIndex"=dword:0
+   "Irq"=dword:2D              ;41 for uart 1, e for uart 2
+   "Sysintr"=dword:0  
+   "MemBase"=dword:1E06002 ;1C20400 for uart 1 ,1E06000 for uart2
+   "MemLen"=dword:100
+   ;"InterruptBitsShift"=dword:0 ; UART 0 Interrupt Sub Register shift bit.
+   "ISTTimeouts"=dword:200	; every 512 ticks checking Modem status.
+   "Prefix"="COM"
+   "index"=dword:1
+   "port"="COM1:"
+   "Dll"="vk3214_dm350.dll"
+   "Order"=dword:7
+   "IClass"="{CC5195AC-BA49-48a0-BE17-DF6D1B0173DD}"
+   "DevConfig"=hex: 10,00, 00,00, 05,00,00,00, 10,01,00,00, 00,4B,00,00, 00,00, 08, 00, 00, 00,00,00,00
+
+[HKEY_LOCAL_MACHINE\Drivers\BuiltIn\Serial\Unimodem]
+   "Tsp"="Unimodem.dll"
+   "DeviceType"=dword:0
+   "FriendlyName"="Serial Cable on COM1:"
+   "DevConfig"=hex: 10,00, 00,00, 05,00,00,00, 10,01,00,00, 00,4B,00,00, 00,00, 08, 00, 00, 00,00,00,00
+   
