@@ -309,7 +309,7 @@ extern void   VK3214ComIntrPorc(PCOM_DEVICE pDevice);
 extern DWORD   ComPollThread( LPVOID Context);
 extern  BOOL VK3214ComDetach(PCOM_DEVICE pDevice ); // Context )
 extern void VK3214ComSetBaudrate( PCOM_DEVICE pDevice,DWORD BaudRate,BYTE ChildPort);
-extern void  vk3214_int_set(void);
+/*extern void  vk3214_int_set(void);*/
 extern VOID VK3214SendData(PCOM_DEVICE pDevice,UCHAR TxData);
 extern VOID ReadFIFO(PCOM_DEVICE pDevice, BYTE Length);
 extern VOID VK3214SendDataFIFO(PCOM_DEVICE pDevice);

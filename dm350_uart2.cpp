@@ -265,25 +265,27 @@ BOOL ForemostInitUart(void)
 			//goto  ret; 			
                    //InitializeUart2port();
 			Sleep(10);				
-			vk3214_int_set();   						
+			//vk3214_int_set();   						
 			//Dump_VKReg();	 
 			//if (!Wakeup_VK3214(v_pUart2Reg))
 		     // {
 			//     goto  ret;   
 			//}
-			
+			//创建中断关联的事件
 			g_hUartIntEvent =  CreateEvent( NULL, FALSE, FALSE, NULL);	
                    if ( !g_hUartIntEvent )
                   {
                        RETAILMSG( 1, (TEXT("pDevice->hComChangedEvent CreateEvent error:%d\n"), GetLastError() ));
                        goto  ret;   
                   }
+		   //根据IRQ获取一个SYSINTR
 		     if (!KernelIoControl(IOCTL_HAL_REQUEST_SYSINTR, &irq, sizeof(irq), &g_sysIntr,sizeof(g_sysIntr), NULL)) 
 	           {   
 		             RETAILMSG( 1, (TEXT("VK3214ComAttach KernelIoControl fail \r\n")));
 		             goto  ret; 
 	            }   		
 		      RETAILMSG( 1, (TEXT("VK3214ComAttach KernelIoControl ok \r\n")));
+		    //关联SYSINTR和之前创建的事件
  	           if (!InterruptInitialize(g_sysIntr, g_hUartIntEvent, NULL, 0))	
 	           {
 	                RETAILMSG( 1, (TEXT("VK3214ComAttach InterruptInitialize fail  g_sysIntr = %x  g_hUartIntEvent =%x\r\n")
@@ -295,14 +297,14 @@ BOOL ForemostInitUart(void)
                                                 ComUartIntThread, 
                                                 ppGlobalDevice, 
                                                 0, NULL );
-	              SetThreadPriority(g_hUartIntThread,  THREAD_PRIORITY_TIME_CRITICAL);
+	           SetThreadPriority(g_hUartIntThread,  THREAD_PRIORITY_TIME_CRITICAL);
 			 if ( !g_hUartIntThread )
                     {         
 	                   RETAILMSG( 1, (TEXT("++Create ComUartIntThread error:%d\r\n"), GetLastError()));     
 	                   goto  ret;   
         	        }
   	       
-	              RETAILMSG( 1, (TEXT("VK3214ComAttachg_hUartIntThread  created   \r\n")));
+	           RETAILMSG( 1, (TEXT("VK3214ComAttachg_hUartIntThread  created   \r\n")));
 
 			 //VK3214_ClearReg();			 
 			// Sleep(40);
@@ -310,7 +312,7 @@ BOOL ForemostInitUart(void)
   			//ChangeMainBaud(VK3214_MAIN_BAUD,v_pUart2Reg);
   			 //Sleep(10);
   			 //Dump_VKReg();	 
- 
+           //ResumeThread(g_hUartIntThread);
 			return(TRUE);
 		}
 	}
@@ -1103,16 +1105,17 @@ BYTE GetVK3214IntStatus(PCOM_DEVICE pDevice)
 
 void  vk3214_g_int_dis(void)
 {
-	g_pINTCReg->EINT1 &= ~(1 << (45 - 32));
+	//g_pINTCReg->EINT1 &= ~(1 << (45 - 32));
      		
 }
 void  vk3214_g_int_en(void)
 {
-    g_pINTCReg->EINT1 |= (1 << (45- 32));
+    //g_pINTCReg->EINT1 |= (1 << (45- 32));
 }
 
 
 
+/*
 void  vk3214_int_set(void)       //GPIO1 for interrupt set it
 {
  if (!GIO_InitLibrary())
@@ -1137,21 +1140,14 @@ void  vk3214_int_set(void)       //GPIO1 for interrupt set it
 	   }
 
 	   
-/*	   
-	   if (!GIO_SetDirection(GIO_PORT_1, GIO_INPUT, FALSE) 
-	   	|| !GIO_SetIRQPort(GIO_PORT_1,GIO_IRQ_FALLING_EDGE)
-             || GIO_SetBankInt(GPIO_BANK0))
-	   {
-	   	RETAILMSG(1, (TEXT(" vk3214_int_set fail \r\n")));
-	   }
-*/	   
+ 
 	   GIO_Release();
 
 
 
 
 }
-
+*/
 
 
 DWORD   ComUartIntThread(LPVOID Context)
@@ -1199,7 +1195,7 @@ DWORD   ComUartIntThread(LPVOID Context)
 	     	 	SetEvent(ppGlobalDec[3]->hComChangedEvent);	     	 	
        	}
     		if(WAIT_OBJECT_0 == dwReason)
-    		{
+    	{
 			InterruptDone(g_sysIntr); 
 		}
 

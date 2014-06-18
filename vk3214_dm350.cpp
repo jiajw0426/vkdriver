@@ -72,15 +72,15 @@ public:
 		CLKC_Release();
 		*/
 		RETAILMSG(ZONE_UART,(L"~CPddVK3214Serial \r\n"));
-		GIO_DeinitLibrary();
-		CLKC_DeinitLibrary();
+		//GIO_DeinitLibrary();
+		//CLKC_DeinitLibrary();
 	}
 
     virtual BOOL Init() 
 	{
      //   return 0;
      	    RETAILMSG(ZONE_UART,(L"++CPddVK3214Serial:Init \r\n"));
-	    if (!GIO_InitLibrary())
+	  /*  if (!GIO_InitLibrary())
 		{
 			return(0);		// failed
 		}
@@ -91,7 +91,7 @@ public:
 			GIO_DeinitLibrary();
 
 			return(0);		// failed
-		}
+		}*/
 		// Set up UART1 GIO pins
 		if(!ForemostInitUart())
 		{
