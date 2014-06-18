@@ -50,11 +50,11 @@ typedef struct _COM_DEVICE_
     HANDLE           hComPollThread;    
     HANDLE           hComChangedEvent;   
     HANDLE           hRecEvent;
-    DWORD           timeout;                
+    DWORD            timeout;                
     LONG             OpenCount;           
-    DWORD          dwIntrtype;
-    DWORD      	dwTXIntrtype;
-    DWORD          sysIntr;
+    DWORD            dwIntrtype;
+    DWORD      	     dwTXIntrtype;
+    DWORD            sysIntr;
     BOOL             DeviceRemoved;
     //BYTE             tempbuf[BULK_BLOCK_BYTE];
     //BYTE             writebuff[BULK_BLOCK_BYTE];
@@ -63,13 +63,13 @@ typedef struct _COM_DEVICE_
     //DWORD          tx_length;
 
     BYTE             readbuff[BULK_BLOCK_BYTE*4]; 
-    DWORD          readindex;
-    DWORD          writeindex;
-    DWORD          length;
-    DWORD          tmplength;
-    DWORD          m_serial_setup;
-    DWORD          m_serial_flag;
-    DWORD          m_childport;
+    DWORD            readindex;
+    DWORD            writeindex;
+    DWORD            length;
+    DWORD            tmplength;
+    DWORD            m_serial_setup;
+    DWORD            m_serial_flag;
+    DWORD            m_childport;
     volatile PS3C2440A_UART_REG	v_pVKComReg;               //uart2
  } COM_DEVICE, *PCOM_DEVICE;
 
