@@ -36,6 +36,10 @@ Notes:
 #include <s3c2440a_clkpwr.h>
 #include <vk3234.h>
 
+#define DEBUG_E(clazz,funciton)  RETAILMSG(VK3214_DEBUG, (TEXT("\r\n++MSG:Enter  %s  %s \r\n"),clazz,funciton));
+#define DEBUG_L(clazz,funciton)  RETAILMSG(VK3214_DEBUG, (TEXT("--MSG:Enter  %s  %s \r\n"),clazz,funciton));
+#define DEBUG_X(clazz,funciton,position)  RETAILMSG(VK3214_DEBUG, (TEXT("*****MSG:Unexcepted  %s  %s at positition :%d \r\n"),clazz,funciton,position));
+
 CReg2440Uart::CReg2440Uart(PULONG pRegAddr,DWORD childSerialIndex)
 :   m_pReg(pRegAddr),m_ChildSerialIndex(childSerialIndex)
 {
@@ -57,17 +61,19 @@ CReg2440Uart::CReg2440Uart(PULONG pRegAddr,DWORD childSerialIndex)
 }
 BOOL   CReg2440Uart::Init() 
 {
-
+	 DEBUG_E(TEXT("CReg2440Uart"),TEXT("Init")) 
     if (m_pReg) { // Set Value to default.
         Write_ULCON(0);
         Write_UCON(0);
         Write_UFCON(0);
         Write_UMCON(0);
 		Write_DefaultBaudRate();
+	     DEBUG_L(TEXT("CReg2440Uart"),TEXT("Init")) 
         return TRUE;
     }
-    else
-        return FALSE;
+	 DEBUG_X(TEXT("CReg2440Uart"),TEXT("Init"),1) ;
+     return FALSE;
+	
 }
 
 void    CReg2440Uart::WriteVKReg(BYTE regindex,BYTE value){
@@ -102,16 +108,21 @@ BYTE    CReg2440Uart::ReadVkReg(BYTE regindex){
 
 void CReg2440Uart::Backup()
 {
+	DEBUG_E(TEXT("CReg2440Uart"),TEXT("Backup")) 
     m_fIsBackedUp = TRUE;
     m_ULCONBackup = Read_ULCON();
     m_UCONBackup = Read_UCON();
     m_UFCONBackup = Read_UFCON();
     m_UMCOMBackup = Read_UMCON();
     m_UBRDIVBackup = Read_UBRDIV();
+    DEBUG_L(TEXT("CReg2440Uart"),TEXT("Backup")) 
+
 }
 void CReg2440Uart::Restore()
 {
+	DEBUG_E(TEXT("CReg2440Uart"),TEXT("Restore")) 
     if (m_fIsBackedUp) {
+		DEBUG_X(TEXT("CReg2440Uart"),TEXT("Restore"),1) 
         Write_ULCON(m_ULCONBackup );
         Write_UCON( m_UCONBackup );
         Write_UFCON( m_UFCONBackup );
@@ -119,27 +130,32 @@ void CReg2440Uart::Restore()
         Write_UBRDIV( m_UBRDIVBackup);
         m_fIsBackedUp = FALSE;
     }
+	DEBUG_L(TEXT("CReg2440Uart"),TEXT("Restore")) 
 }
 CReg2440Uart::Write_DefaultBaudRate(){
 
+	DEBUG_E(TEXT("CReg2440Uart"),TEXT("Write_DefaultBaudRate")) 
 	DEBUGMSG(ZONE_INIT, (TEXT("Write_DefaultBaudRate -> %d\r\n"), VK3214_DEFAULT_BAUD));
 	if ( (Read_UCON() & CS_MASK) == CS_PCLK ) {
 		Write_UBRDIV( (int)(m_s3c2440_pclk/16.0/VK3214_DEFAULT_BAUD) -1 );
+		DEBUG_L(TEXT("CReg2440Uart"),TEXT("Write_DefaultBaudRate")) 
 		return TRUE;
 	}
+	DEBUG_X(TEXT("CReg2440Uart"),TEXT("Write_DefaultBaudRate"),1) 
 
 }
 CReg2440Uart::Write_BaudRate(ULONG BaudRate)
 {
-    DEBUGMSG(ZONE_INIT, (TEXT("SetBaudRate -> %d\r\n"), BaudRate));
+	RETAILMSG(VK3214_DEBUG, (TEXT("\r\n++MSG:Enter CReg2440Uart SetBaudRate -> %d\r\n"), BaudRate));
     if ( (Read_UCON() & CS_MASK) == CS_PCLK ) {
         Write_UBRDIV( (int)(m_s3c2440_pclk/16.0/BaudRate) -1 );
+	RETAILMSG(VK3214_DEBUG, (TEXT("--MSG:Leave CReg2440Uart SetBaudRate\r\n")));
         return TRUE;
     }
     else {
         // TODO: Support external UART clock.
         //OUTREG(pHWHead,UBRDIV,( (int)(S2440UCLK/16.0/BaudRate) -1 ));
-        RETAILMSG(TRUE, (TEXT("ERROR: The s3c2440a serial driver doesn't support an external UART clock.\r\n")));
+        RETAILMSG(VK3214_DEBUG, (TEXT("ERROR: The s3c2440a serial driver doesn't support an external UART clock.\r\n")));
         ASSERT(FALSE);
         return(FALSE);
     }
@@ -157,6 +173,7 @@ CPdd2440Uart::CPdd2440Uart (LPTSTR lpActivePath, PVOID pMdd, PHWOBJ pHwObj )
 ,   m_ActiveReg(HKEY_LOCAL_MACHINE,lpActivePath)
 ,   CMiniThread (0, TRUE)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("CPdd2440Uart")) 
     m_pReg2440Uart = NULL;
     m_pINTregs = NULL;
     m_dwIntShift = 0;
@@ -167,6 +184,7 @@ CPdd2440Uart::CPdd2440Uart (LPTSTR lpActivePath, PVOID pMdd, PHWOBJ pHwObj )
     m_XmitFlushDone =  CreateEvent(0, FALSE, FALSE, NULL);
     m_XmitFifoEnable = FALSE;
     m_dwWaterMark = 8 ;
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("CPdd2440Uart")) 
 }
 CPdd2440Uart::~CPdd2440Uart()
 {
@@ -192,6 +210,7 @@ CPdd2440Uart::~CPdd2440Uart()
 }
 BOOL CPdd2440Uart::Init()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("CPdd2440Uart")) 
     if ( CSerialPDD::Init() && IsKeyOpened() && m_XmitFlushDone!=NULL) { 
         // IST Setup .
         DDKISRINFO ddi;
@@ -225,7 +244,7 @@ BOOL CPdd2440Uart::Init()
         if (!MapHardware() || !CreateHardwareAccess()) {
             return FALSE;
         }
-
+        DEBUG_L(TEXT("CPdd2440Uart"),TEXT("CPdd2440Uart")) 
         return TRUE;
     }
     return FALSE;
@@ -272,8 +291,12 @@ BOOL CPdd2440Uart::CreateHardwareAccess()
         if (m_pReg2440Uart && !m_pReg2440Uart->Init()) { // FALSE.
             delete m_pReg2440Uart ;
             m_pReg2440Uart = NULL;
+
         }
     }
+	if(m_pReg2440Uart!=NULL){
+     
+	}
     return (m_pReg2440Uart!=NULL);
 }
 #define MAX_RETRY 0x1000
@@ -296,10 +319,10 @@ void CPdd2440Uart::PostInit()
     m_HardwareLock.Unlock();
     CSerialPDD::PostInit();
     CeSetPriority(m_dwPriority256);
-#ifdef DEBUG
+	#ifdef DEBUG
     if ( ZONE_INIT )
         m_pReg2440Uart->DumpRegister();
-#endif
+    #endif
     ThreadStart();  // Start IST.
 }
 DWORD CPdd2440Uart::ThreadRun()
@@ -722,6 +745,7 @@ BOOL    CPdd2440Uart::SetByteSize(ULONG ByteSize)
 }
 BOOL    CPdd2440Uart::SetParity(ULONG Parity)
 {
+	
     BOOL bRet = TRUE;
     m_HardwareLock.Lock();
     ULONG ulData = m_pReg2440Uart->Read_ULCON() & (~(0x7<<3));
