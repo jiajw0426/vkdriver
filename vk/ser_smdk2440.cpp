@@ -32,6 +32,7 @@ Notes:
 #include <pdds3c2440_ser.h>
 #include <s3c2440a_base_regs.h>
 #include <s3c2440a_ioport.h>
+#include "vk3234.h"
 
 
 // CPdd2440Serial0 is only use for UART 0 which 
@@ -42,13 +43,17 @@ public:
     CPdd2440Serial0(LPTSTR lpActivePath, PVOID pMdd, PHWOBJ pHwObj)
         : CPdd2440Uart(lpActivePath, pMdd, pHwObj)
         {
+		DEBUG_E(TEXT("CPdd2440Serial0"),TEXT("CPdd2440Serial0")) 
         m_pIOPregs = NULL;
+		DEBUG_L(TEXT("CPdd2440Serial0"),TEXT("CPdd2440Serial0")) 
     }
     ~CPdd2440Serial0() {
         if (m_pIOPregs!=NULL)
             MmUnmapIoSpace((PVOID)m_pIOPregs,0);
     }
 	virtual BOOL Init() {
+		   DEBUG_E(TEXT("CPdd2440Serial0"),TEXT("Init")) 
+			   BOOL result;
 	        PHYSICAL_ADDRESS    ioPhysicalBase = { S3C2440A_BASE_REG_PA_IOPORT, 0};
 	        ULONG               inIoSpace = 0;
 	        if (TranslateBusAddr(m_hParent,Internal,0, ioPhysicalBase,&inIoSpace,&ioPhysicalBase)) {
@@ -67,7 +72,9 @@ public:
 			m_pIOPregs->GPHCON &= ~(0x3<<0 | 0x3<<2 | 0x3<<4 | 0x3<<6 );//tx,rx,rts,cts
 			m_pIOPregs->GPHCON |=  (0x2<<0 | 0x2<<2 | 0x2<<4 | 0x2<<6 ); 
 			m_pIOPregs->GPHUP  |= 0xf;
-			return CPdd2440Uart::Init();
+			result=CPdd2440Uart::Init();
+			 DEBUG_L(TEXT("CPdd2440Serial0"),TEXT("Init")) 
+			return result;
 		}
 		return FALSE;
 	};
@@ -94,13 +101,17 @@ public:
     CPdd2440Serial1(LPTSTR lpActivePath, PVOID pMdd, PHWOBJ pHwObj)
         : CPdd2440Uart(lpActivePath, pMdd, pHwObj)
         {
+			DEBUG_E(TEXT("CPdd2440Serial1"),TEXT("CPdd2440Serial1")) 
         m_pIOPregs = NULL;
+			DEBUG_L(TEXT("CPdd2440Serial1"),TEXT("CPdd2440Serial1")) 
     }
     ~CPdd2440Serial1() {
         if (m_pIOPregs!=NULL)
             MmUnmapIoSpace((PVOID)m_pIOPregs,0);
     }
     virtual BOOL Init() {
+		BOOL result;
+		DEBUG_E(TEXT("CPdd2440Serial1"),TEXT("init")) 
         PHYSICAL_ADDRESS    ioPhysicalBase = { S3C2440A_BASE_REG_PA_IOPORT, 0};
         ULONG               inIoSpace = 0;
         if (TranslateBusAddr(m_hParent,Internal,0, ioPhysicalBase,&inIoSpace,&ioPhysicalBase)) {
@@ -121,7 +132,9 @@ public:
 	        m_pIOPregs->GPHCON |= (0x2<<8 | 0x2<<10); 
 			m_pIOPregs->GPHUP |= 0x30;
 
-            return CPdd2440Uart::Init();
+             result=CPdd2440Uart::Init();
+			 DEBUG_L(TEXT("CPdd2440Serial1"),TEXT("init")) 
+			return result;
         }
         return FALSE;
     };
@@ -144,13 +157,17 @@ public:
     CPdd2440Serial2(LPTSTR lpActivePath, PVOID pMdd, PHWOBJ pHwObj)
         : CPdd2440Uart(lpActivePath, pMdd, pHwObj)
         {
+			DEBUG_E(TEXT("CPdd2440Serial2"),TEXT("CPdd2440Serial2")) 
         m_pIOPregs = NULL;
+			DEBUG_L(TEXT("CPdd2440Serial2"),TEXT("CPdd2440Serial2")) 
     }
     ~CPdd2440Serial2() {
         if (m_pIOPregs!=NULL)
             MmUnmapIoSpace((PVOID)m_pIOPregs,0);
     }
     virtual BOOL Init() {
+		BOOL result;
+		DEBUG_E(TEXT("CPdd2440Serial2"),TEXT("init")) 
         PHYSICAL_ADDRESS    ioPhysicalBase = { S3C2440A_BASE_REG_PA_IOPORT, 0};
         ULONG               inIoSpace = 0;
         if (TranslateBusAddr(m_hParent,Internal,0, ioPhysicalBase,&inIoSpace,&ioPhysicalBase)) {
@@ -171,7 +188,9 @@ public:
 	        m_pIOPregs->GPHCON |= (0x2<<12 | 0x2<<14); 
 			m_pIOPregs->GPHUP |= 0xc0;
 
-            return CPdd2440Uart::Init();
+              result= CPdd2440Uart::Init();
+			DEBUG_L(TEXT("CPdd2440Serial2"),TEXT("init")) 
+				return result;
         }
         return FALSE;
     };
@@ -188,6 +207,7 @@ public:
 };
 CSerialPDD * CreateSerialObject(LPTSTR lpActivePath, PVOID pMdd,PHWOBJ pHwObj, DWORD DeviceArrayIndex)
 {
+	DEBUG_E(TEXT("CreateSerialObject"),TEXT("CreateSerialObject")) 
 	CSerialPDD * pSerialPDD = NULL;
 	switch (DeviceArrayIndex) {
 		case 0:
@@ -214,6 +234,7 @@ CSerialPDD * CreateSerialObject(LPTSTR lpActivePath, PVOID pMdd,PHWOBJ pHwObj, D
 		delete pSerialPDD;
 		pSerialPDD = NULL;
 	}
+	DEBUG_E(TEXT("CreateSerialObject"),TEXT("CreateSerialObject"))
 	return pSerialPDD;
 }
 void DeleteSerialObject(CSerialPDD * pSerialPDD)

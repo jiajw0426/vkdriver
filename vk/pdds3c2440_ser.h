@@ -29,10 +29,12 @@ Notes:
 #include <cmthread.h>
 #include <S3c2440a_intr.h>
 #include "bsp_cfg.h"
-#ifndef DEBUG
-#define DEBUG
 
-#endif
+#define DEBUG_E(clazz,funciton)  RETAILMSG(VK3214_DEBUG, (TEXT("\r\n++MSG:Enter  %s  %s \r\n"),clazz,funciton));
+#define DEBUG_L(clazz,funciton)  RETAILMSG(VK3214_DEBUG, (TEXT("--MSG:Enter  %s  %s \r\n"),clazz,funciton));
+#define DEBUG_X(clazz,funciton,position)  RETAILMSG(VK3214_DEBUG, (TEXT("*****MSG:Unexcepted  %s  %s at positition :%d \r\n"),clazz,funciton,position));
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //// S3C2440 UART Register

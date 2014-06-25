@@ -36,13 +36,12 @@ Notes:
 #include <s3c2440a_clkpwr.h>
 #include <vk3234.h>
 
-#define DEBUG_E(clazz,funciton)  RETAILMSG(VK3214_DEBUG, (TEXT("\r\n++MSG:Enter  %s  %s \r\n"),clazz,funciton));
-#define DEBUG_L(clazz,funciton)  RETAILMSG(VK3214_DEBUG, (TEXT("--MSG:Enter  %s  %s \r\n"),clazz,funciton));
-#define DEBUG_X(clazz,funciton,position)  RETAILMSG(VK3214_DEBUG, (TEXT("*****MSG:Unexcepted  %s  %s at positition :%d \r\n"),clazz,funciton,position));
+
 
 CReg2440Uart::CReg2440Uart(PULONG pRegAddr,DWORD childSerialIndex)
 :   m_pReg(pRegAddr),m_ChildSerialIndex(childSerialIndex)
 {
+	 DEBUG_E(TEXT("CReg2440Uart"),TEXT("ICReg2440Uartnit")) 
 	
     m_fIsBackedUp = FALSE;
     PROCESSOR_INFO procInfo;
@@ -57,6 +56,7 @@ CReg2440Uart::CReg2440Uart(PULONG pRegAddr,DWORD childSerialIndex)
         m_s3c2440_pclk = procInfo.dwClockSpeed/PCLKDIV;
         RETAILMSG(TRUE, (TEXT("INFO: CReg2440Uart::CReg2440Uart using processor frequency reported by the OAL (%d).\r\n"), m_s3c2440_pclk)); 
     }
+	 DEBUG_L(TEXT("CReg2440Uart"),TEXT("CReg2440Uart")) 
 
 }
 BOOL   CReg2440Uart::Init() 
@@ -210,7 +210,7 @@ CPdd2440Uart::~CPdd2440Uart()
 }
 BOOL CPdd2440Uart::Init()
 {
-	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("CPdd2440Uart")) 
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("Init")) 
     if ( CSerialPDD::Init() && IsKeyOpened() && m_XmitFlushDone!=NULL) { 
         // IST Setup .
         DDKISRINFO ddi;
@@ -244,13 +244,14 @@ BOOL CPdd2440Uart::Init()
         if (!MapHardware() || !CreateHardwareAccess()) {
             return FALSE;
         }
-        DEBUG_L(TEXT("CPdd2440Uart"),TEXT("CPdd2440Uart")) 
+        DEBUG_L(TEXT("CPdd2440Uart"),TEXT("Init")) 
         return TRUE;
     }
     return FALSE;
 }
 BOOL CPdd2440Uart::MapHardware() 
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("MapHardware")) 
     if (m_pRegVirtualAddr !=NULL)
         return TRUE;
 
@@ -280,10 +281,12 @@ BOOL CPdd2440Uart::MapHardware()
     if (TranslateBusAddr(m_hParent,(INTERFACE_TYPE)dwi.dwInterfaceType,dwi.dwBusNumber, ioPhysicalBase,&inIoSpace,&ioPhysicalBase)) {
         m_pINTregs = (S3C2440A_INTR_REG *) MmMapIoSpace(ioPhysicalBase,sizeof(S3C2440A_INTR_REG),FALSE);
     }
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("MapHardware")) 
     return (m_pRegVirtualAddr!=NULL && m_pINTregs!=NULL);
 }
 BOOL CPdd2440Uart::CreateHardwareAccess()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("CreateHardwareAccess")) 
     if (m_pReg2440Uart)
         return TRUE;
     if (m_pRegVirtualAddr!=NULL) {
@@ -295,13 +298,17 @@ BOOL CPdd2440Uart::CreateHardwareAccess()
         }
     }
 	if(m_pReg2440Uart!=NULL){
-     
+     DEBUG_L(TEXT("CPdd2440Uart"),TEXT("CreateHardwareAccess")) 
+
+	}else{
+		DEBUG_X(TEXT("CPdd2440Uart"),TEXT("CreateHardwareAccess"),1) 
 	}
     return (m_pReg2440Uart!=NULL);
 }
 #define MAX_RETRY 0x1000
 void CPdd2440Uart::PostInit()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("PostInit")) 
     DWORD dwCount=0;
     m_HardwareLock.Lock();
     m_pReg2440Uart->Write_UCON(0); // Set to Default;
@@ -324,11 +331,14 @@ void CPdd2440Uart::PostInit()
         m_pReg2440Uart->DumpRegister();
     #endif
     ThreadStart();  // Start IST.
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("PostInit")) 
 }
 DWORD CPdd2440Uart::ThreadRun()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("ThreadRun")) 
     while ( m_hISTEvent!=NULL && !IsTerminated()) {
         if (WaitForSingleObject( m_hISTEvent,m_dwISTTimeout)==WAIT_OBJECT_0) {
+			DEBUG_X(TEXT("CPdd2440Uart"),TEXT("ThreadRun enter WaitForSingleObject"),1) 
             m_HardwareLock.Lock();    
             while (!IsTerminated() ) {
                 DWORD dwData = (GetInterruptStatus() & (S2440UART_INT_RXD|S2440UART_INT_TXD|S2440UART_INT_ERR));
@@ -364,21 +374,25 @@ DWORD CPdd2440Uart::ThreadRun()
 #endif
         }
     }
+
     return 1;
 }
 BOOL CPdd2440Uart::InitialEnableInterrupt(BOOL bEnable )
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("InitialEnableInterrupt"))
     m_HardwareLock.Lock();
     if (bEnable) 
         EnableInterrupt(S2440UART_INT_RXD | S2440UART_INT_ERR );
     else
         DisableInterrupt(S2440UART_INT_RXD | S2440UART_INT_ERR );
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("InitialEnableInterrupt"))
     return TRUE;
 }
 
 BOOL  CPdd2440Uart::InitXmit(BOOL bInit)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("InitXmit"))
     if (bInit) {
         m_HardwareLock.Lock();
         DWORD dwBit = m_pReg2440Uart->Read_UCON();
@@ -415,10 +429,12 @@ BOOL  CPdd2440Uart::InitXmit(BOOL bInit)
             dwTicks +=5;
         }
     }
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("InitXmit"))
     return TRUE;
 }
 DWORD   CPdd2440Uart::GetWriteableSize()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("GetWriteableSize"))
     DWORD dwWriteSize = 0;
     DWORD dwUfState = m_pReg2440Uart->Read_UFSTAT() ;
     if ((dwUfState& (1<<14))==0) { // It is not full.
@@ -426,10 +442,12 @@ DWORD   CPdd2440Uart::GetWriteableSize()
         if (dwUfState < SER2440_FIFO_DEPTH_TX-1)
             dwWriteSize = SER2440_FIFO_DEPTH_TX-1 - dwUfState;
     }
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("GetWriteableSize"))
     return dwWriteSize;
 }
 void    CPdd2440Uart::XmitInterruptHandler(PUCHAR pTxBuffer, ULONG *pBuffLen)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("XmitInterruptHandler"))
     PREFAST_DEBUGCHK(pBuffLen!=NULL);
     m_HardwareLock.Lock();
     if (*pBuffLen == 0) {
@@ -466,13 +484,16 @@ void    CPdd2440Uart::XmitInterruptHandler(PUCHAR pTxBuffer, ULONG *pBuffLen)
 		Rx_Pause(FALSE);
     }
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("XmitInterruptHandler"))
 }
 
 void    CPdd2440Uart::XmitComChar(UCHAR ComChar)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("XmitComChar"))
     // This function has to poll until the Data can be sent out.
     BOOL bDone = FALSE;
     do {
+		DEBUG_X(TEXT("CPdd2440Uart"),TEXT("XmitComChar writing...."),1)
         m_HardwareLock.Lock(); 
         if ( GetWriteableSize()!=0 ) {  // If not full 
             m_pReg2440Uart->Write_UTXH(ComChar);
@@ -485,16 +506,20 @@ void    CPdd2440Uart::XmitComChar(UCHAR ComChar)
         if (!bDone)
            WaitForSingleObject(m_XmitFlushDone, (ULONG)1000); 
     }
-    while (!bDone);
+	while (!bDone);
+
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("XmitComChar"))
 }
 BOOL    CPdd2440Uart::EnableXmitInterrupt(BOOL fEnable)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("EnableXmitInterrupt"))
 	m_HardwareLock.Lock();
 	if (fEnable)
 		EnableInterrupt(S2440UART_INT_TXD);
 	else
 		DisableInterrupt(S2440UART_INT_TXD);
 	m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("EnableXmitInterrupt"))
 	return TRUE;
 }
 BOOL  CPdd2440Uart::CancelXmit()
@@ -510,6 +535,7 @@ static PAIRS s_HighWaterPairs[] = {
 
 BYTE  CPdd2440Uart::GetWaterMarkBit()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("GetWaterMarkBit"))
     BYTE bReturnKey = (BYTE)s_HighWaterPairs[0].Key;
     for (DWORD dwIndex=dim(s_HighWaterPairs)-1;dwIndex!=0; dwIndex --) {
         if (m_dwWaterMark>=s_HighWaterPairs[dwIndex].AssociatedValue) {
@@ -517,10 +543,12 @@ BYTE  CPdd2440Uart::GetWaterMarkBit()
             break;
         }
     }
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("GetWaterMarkBit"))
     return bReturnKey;
 }
 DWORD   CPdd2440Uart::GetWaterMark()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("GetWaterMark"))
     BYTE bReturnValue = (BYTE)s_HighWaterPairs[0].AssociatedValue;
     for (DWORD dwIndex=dim(s_HighWaterPairs)-1;dwIndex!=0; dwIndex --) {
         if (m_dwWaterMark>=s_HighWaterPairs[dwIndex].AssociatedValue) {
@@ -528,12 +556,14 @@ DWORD   CPdd2440Uart::GetWaterMark()
             break;
         }
     }
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("GetWaterMark"))
     return bReturnValue;
 }
 
 // Receive
 BOOL    CPdd2440Uart::InitReceive(BOOL bInit)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("InitReceive"))
     m_HardwareLock.Lock();
     if (bInit) {
         BYTE uWarterMarkBit = GetWaterMarkBit();
@@ -564,10 +594,12 @@ BOOL    CPdd2440Uart::InitReceive(BOOL bInit)
         DisableInterrupt(S2440UART_INT_RXD | S2440UART_INT_ERR );
     }
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("InitReceive"))
     return TRUE;
 }
 ULONG   CPdd2440Uart::ReceiveInterruptHandler(PUCHAR pRxBuffer,ULONG *pBufflen)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("ReceiveInterruptHandler"))
     DEBUGMSG(ZONE_THREAD|ZONE_READ,(TEXT("+CPdd2440Uart::ReceiveInterruptHandler pRxBuffer=%x,*pBufflen=%x\r\n"),
         pRxBuffer,pBufflen!=NULL?*pBufflen:0));
     DWORD dwBytesDropped = 0;
@@ -611,26 +643,32 @@ ULONG   CPdd2440Uart::ReceiveInterruptHandler(PUCHAR pRxBuffer,ULONG *pBufflen)
     }
     DEBUGMSG(ZONE_THREAD|ZONE_READ,(TEXT("-CPdd2440Uart::ReceiveInterruptHandler pRxBuffer=%x,*pBufflen=%x,dwBytesDropped=%x\r\n"),
         pRxBuffer,pBufflen!=NULL?*pBufflen:0,dwBytesDropped));
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("ReceiveInterruptHandler"))
     return dwBytesDropped;
 }
 ULONG   CPdd2440Uart::CancelReceive()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("CancelReceive"))
     m_bReceivedCanceled = TRUE;
     m_HardwareLock.Lock();
     InitReceive(TRUE);
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("CancelReceive"))
     return 0;
 }
 BOOL    CPdd2440Uart::InitModem(BOOL bInit)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("InitModem"))
     m_HardwareLock.Lock();   
     m_pReg2440Uart->Write_UMCON((1<<0)); // Disable AFC and Set RTS as default.
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("InitModem"))
     return TRUE;
 }
 
 ULONG   CPdd2440Uart::GetModemStatus()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("GetModemStatus"))
     m_HardwareLock.Lock();
     ULONG ulReturn =0 ;
     ULONG Events = 0;
@@ -646,10 +684,12 @@ ULONG   CPdd2440Uart::GetModemStatus()
     // Report Modem Status;
     if ( ubModemStatus & (1<<0) )
         ulReturn |= MS_CTS_ON;
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("GetModemStatus"))
     return ulReturn;
 }
 void    CPdd2440Uart::SetRTS(BOOL bSet)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("SetRTS"))
     m_HardwareLock.Lock();
     ULONG ulData = m_pReg2440Uart->Read_UMCON();
     if (bSet) {
@@ -659,10 +699,12 @@ void    CPdd2440Uart::SetRTS(BOOL bSet)
         ulData &= ~(1<<0);
     m_pReg2440Uart->Write_UMCON(ulData);
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("SetRTS"))
 
 }
 BOOL CPdd2440Uart::InitLine(BOOL bInit)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("InitLine"))
     m_HardwareLock.Lock();
     if  (bInit) {
         // Set 8Bit,1Stop,NoParity,Normal Mode.
@@ -673,10 +715,12 @@ BOOL CPdd2440Uart::InitLine(BOOL bInit)
         DisableInterrupt(S2440UART_INT_ERR );
     }
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("InitLine"))
     return TRUE;
 }
 BYTE CPdd2440Uart::GetLineStatus()
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("GetLineStatus"))
     m_HardwareLock.Lock();
     ULONG ulData = m_pReg2440Uart->Read_UERSTAT();
     m_HardwareLock.Unlock();
@@ -696,10 +740,12 @@ BYTE CPdd2440Uart::GetLineStatus()
     if (ulData & (1<<3)) {
          EventCallback(EV_BREAK);
     }
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("GetLineStatus"))
     return (UINT8)ulData;
 }
 void    CPdd2440Uart::SetBreak(BOOL bSet)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("SetBreak"))
     m_HardwareLock.Lock();
     ULONG ulData = m_pReg2440Uart->Read_UCON();
     if (bSet)
@@ -708,16 +754,20 @@ void    CPdd2440Uart::SetBreak(BOOL bSet)
         ulData &= ~(1<<4);
     m_pReg2440Uart->Write_UCON(ulData);
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("SetBreak"))
 }
 BOOL    CPdd2440Uart::SetBaudRate(ULONG BaudRate,BOOL /*bIrModule*/)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("BaudRate"))
     m_HardwareLock.Lock();
     BOOL bReturn = m_pReg2440Uart->Write_BaudRate(BaudRate);
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("BaudRate"))
     return TRUE;
 }
 BOOL    CPdd2440Uart::SetByteSize(ULONG ByteSize)
 {
+		DEBUG_E(TEXT("CPdd2440Uart"),TEXT("SetByteSize"))
     BOOL bRet = TRUE;
     m_HardwareLock.Lock();
     ULONG ulData = m_pReg2440Uart->Read_ULCON() & (~0x3);
@@ -741,10 +791,12 @@ BOOL    CPdd2440Uart::SetByteSize(ULONG ByteSize)
         m_pReg2440Uart->Write_ULCON(ulData);
     }
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("SetByteSize"))
     return bRet;
 }
 BOOL    CPdd2440Uart::SetParity(ULONG Parity)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("SetParity"))
 	
     BOOL bRet = TRUE;
     m_HardwareLock.Lock();
@@ -772,10 +824,12 @@ BOOL    CPdd2440Uart::SetParity(ULONG Parity)
         m_pReg2440Uart->Write_ULCON(ulData);
     }
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("SetParity"))
     return bRet;
 }
 BOOL    CPdd2440Uart::SetStopBits(ULONG StopBits)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("SetStopBits"))
     BOOL bRet = TRUE;
     m_HardwareLock.Lock();
     ULONG ulData = m_pReg2440Uart->Read_ULCON() & (~(0x1<<2));
@@ -794,15 +848,18 @@ BOOL    CPdd2440Uart::SetStopBits(ULONG StopBits)
         m_pReg2440Uart->Write_ULCON(ulData);
     }
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("SetStopBits"))
     return bRet;
 }
 void    CPdd2440Uart::SetOutputMode(BOOL UseIR, BOOL Use9Pin)
 {
+	DEBUG_E(TEXT("CPdd2440Uart"),TEXT("SetOutputMode"))
     m_HardwareLock.Lock();
     CSerialPDD::SetOutputMode(UseIR, Use9Pin);
     ULONG ulData = m_pReg2440Uart->Read_ULCON() & (~(0x1<<6));
 //    ulData |= (UseIR?(0x1<<6):0);
     m_pReg2440Uart->Write_ULCON(ulData);
     m_HardwareLock.Unlock();
+	DEBUG_L(TEXT("CPdd2440Uart"),TEXT("SetOutputMode"))
 }
 
